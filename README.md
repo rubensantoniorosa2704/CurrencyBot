@@ -1,5 +1,5 @@
 # CurrencyBot
-Cotação de moedas em tempo real, inpirado no [ConversorSelenium](https://github.com/CastroMurilo/ConversorSelenium) de CastroMurilo.
+Cotação de moedas em tempo real, inspirado no [ConversorSelenium](https://github.com/CastroMurilo/ConversorSelenium) de CastroMurilo.
 
 ## Funcionalidades
 
