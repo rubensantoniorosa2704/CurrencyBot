@@ -1,4 +1,3 @@
-
 import csv
 import platform
 from datetime import datetime
