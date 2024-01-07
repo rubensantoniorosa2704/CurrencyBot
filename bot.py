@@ -1,8 +1,12 @@
 import csv
+import platform
 from datetime import datetime
 import logging
+
 from botcity.web import WebBot, Browser
 from botcity.maestro import BotMaestroSDK, AutomationTaskFinishStatus
+
+from selenium.webdriver.firefox.options import Options
 
 # Configuração para evitar exceções ao interagir com o BotMaestroSDK
 BotMaestroSDK.RAISE_NOT_CONNECTED = False
@@ -11,15 +15,32 @@ class CotacaoBot:
     """
     Classe para interagir com o bot de navegação web.
     """
-    def __init__(self, headless:bool):
+    def __init__(self, headless: bool, full_driver_path: str = None):
         """
-        Inicializa o bot de navegação web.
+        Inicializa o bot e aplica as configurações.
+
+        :param headless: Um booleano indicando se o navegador deve ser executado em modo headless.
+        :param full_driver_path: O caminho completo para o driver do navegador. Informar None usa o driver padrão no PATH
         """
+        firefox_options = Options()
+        firefox_options.headless = headless
+
         self.bot = WebBot()
+        
+        # Check if running on Windows and set Firefox binary path accordingly
+        if platform.system() == 'Windows':
+            firefox_binary_path = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+            firefox_options.binary_location = firefox_binary_path
+            self.bot.options = firefox_options
+        
+        if full_driver_path:
+            self.bot.driver_path = full_driver_path
+
         self.bot.headless = headless
         self.bot.browser = Browser.FIREFOX
 
-    def browse_and_get_cotacao(self, moeda):
+
+    def browse_and_get_cotacao(self, moeda) -> str:
         """
         Navega até a página do Google e extrai a moeda e a cotação.
 
@@ -38,7 +59,6 @@ class CotacaoBot:
             return temp_moeda, temp_cotacao
         except Exception as e:
             print(f"Error browsing and extracting data for {moeda}: {str(e)}")
-            return None, None
 
     def stop_browser(self):
         """
@@ -60,7 +80,7 @@ class LogFile:
         Args:
             filename (str): Nome do arquivo de log.
         """
-        logging.basicConfig(filename=filename, level=logging.INFO)
+        logging.basicConfig(filename=filename, level=logging.INFO, encoding='UTF-8')
 
     def write(self, message):
         """
@@ -92,7 +112,7 @@ class CsvFile:
         Configura o arquivo CSV, adicionando cabeçalho se o arquivo estiver vazio.
         """
         try:
-            with open(self.filename, 'a', newline='') as file:
+            with open(self.filename, 'a', newline='', encoding='UTF-8') as file:
                 writer = csv.writer(file, delimiter=';')
                 if file.tell() == 0:
                     writer.writerow(["Data", "Moeda", "Cotação"])
@@ -109,7 +129,7 @@ class CsvFile:
             cotacao (str): Valor da cotação.
         """
         try:
-            with open(self.filename, 'a', newline='') as file:
+            with open(self.filename, 'a', newline='', encoding='UTF-8') as file:
                 writer = csv.writer(file, delimiter=';')
                 writer.writerow([data, moeda, cotacao])
         except Exception as e:
