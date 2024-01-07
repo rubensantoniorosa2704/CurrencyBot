@@ -1,8 +1,11 @@
+
 import csv
+import platform
 from datetime import datetime
 import logging
-from botcity.web import WebBot, Browser
 from botcity.maestro import BotMaestroSDK, AutomationTaskFinishStatus
+from selenium import webdriver
+from selenium.webdriver.firefox.options import Options
 
 # Configuração para evitar exceções ao interagir com o BotMaestroSDK
 BotMaestroSDK.RAISE_NOT_CONNECTED = False
@@ -15,9 +18,15 @@ class CotacaoBot:
         """
         Inicializa o bot de navegação web.
         """
-        self.bot = WebBot()
-        self.bot.headless = headless
-        self.bot.browser = Browser.FIREFOX
+        firefox_options = Options()
+        firefox_options.headless = headless
+
+        # Check if running on Windows and set Firefox binary path accordingly
+        if platform.system() == 'Windows':
+            firefox_binary_path = r'C:\Program Files\Mozilla Firefox\firefox.exe'
+            firefox_options.binary_location = firefox_binary_path
+
+        self.browser = webdriver.Firefox(options=firefox_options)
 
     def browse_and_get_cotacao(self, moeda):
         """
@@ -30,11 +39,11 @@ class CotacaoBot:
             Tuple[str, str]: Retorna a moeda e a cotação.
         """
         try:
-            self.bot.browse(f"https://www.google.com/search?q=cotação+{moeda}")
+            self.browser.get(f"https://www.google.com/search?q=cotação+{moeda}")
             script_moeda = 'return document.querySelector("span.vLqKYe").textContent;'
             script_cotacao = 'return document.querySelector(".SwHCTb").textContent;'
-            temp_moeda = self.bot.execute_javascript(script_moeda)
-            temp_cotacao = self.bot.execute_javascript(script_cotacao)
+            temp_moeda = self.browser.execute_script(script_moeda)
+            temp_cotacao = self.browser.execute_script(script_cotacao)
             return temp_moeda, temp_cotacao
         except Exception as e:
             print(f"Error browsing and extracting data for {moeda}: {str(e)}")
@@ -45,7 +54,7 @@ class CotacaoBot:
         Para o navegador web.
         """
         try:
-            self.bot.stop_browser()
+            self.browser.quit()
         except Exception as e:
             print(f"Error stopping the browser: {str(e)}")
 
@@ -60,7 +69,7 @@ class LogFile:
         Args:
             filename (str): Nome do arquivo de log.
         """
-        logging.basicConfig(filename=filename, level=logging.INFO)
+        logging.basicConfig(filename=filename, level=logging.INFO, encoding='UTF-8')
 
     def write(self, message):
         """
@@ -92,7 +101,7 @@ class CsvFile:
         Configura o arquivo CSV, adicionando cabeçalho se o arquivo estiver vazio.
         """
         try:
-            with open(self.filename, 'a', newline='') as file:
+            with open(self.filename, 'a', newline='', encoding='UTF-8') as file:
                 writer = csv.writer(file, delimiter=';')
                 if file.tell() == 0:
                     writer.writerow(["Data", "Moeda", "Cotação"])
@@ -109,7 +118,7 @@ class CsvFile:
             cotacao (str): Valor da cotação.
         """
         try:
-            with open(self.filename, 'a', newline='') as file:
+            with open(self.filename, 'a', newline='', encoding='UTF-8') as file:
                 writer = csv.writer(file, delimiter=';')
                 writer.writerow([data, moeda, cotacao])
         except Exception as e:
