@@ -2,8 +2,8 @@ import csv
 import platform
 from datetime import datetime
 import logging
+from botcity.web import WebBot, Browser
 from botcity.maestro import BotMaestroSDK, AutomationTaskFinishStatus
-from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
 # Configuração para evitar exceções ao interagir com o BotMaestroSDK
@@ -19,13 +19,17 @@ class CotacaoBot:
         """
         firefox_options = Options()
         firefox_options.headless = headless
-
+        
         # Check if running on Windows and set Firefox binary path accordingly
         if platform.system() == 'Windows':
             firefox_binary_path = r'C:\Program Files\Mozilla Firefox\firefox.exe'
             firefox_options.binary_location = firefox_binary_path
 
-        self.browser = webdriver.Firefox(options=firefox_options)
+        self.bot = WebBot()
+        self.bot.headless = headless
+        self.bot.browser = Browser.FIREFOX
+        self.bot.options = firefox_options
+
 
     def browse_and_get_cotacao(self, moeda):
         """
@@ -38,11 +42,11 @@ class CotacaoBot:
             Tuple[str, str]: Retorna a moeda e a cotação.
         """
         try:
-            self.browser.get(f"https://www.google.com/search?q=cotação+{moeda}")
+            self.bot.browse(f"https://www.google.com/search?q=cotação+{moeda}")
             script_moeda = 'return document.querySelector("span.vLqKYe").textContent;'
             script_cotacao = 'return document.querySelector(".SwHCTb").textContent;'
-            temp_moeda = self.browser.execute_script(script_moeda)
-            temp_cotacao = self.browser.execute_script(script_cotacao)
+            temp_moeda = self.bot.execute_javascript(script_moeda)
+            temp_cotacao = self.bot.execute_javascript(script_cotacao)
             return temp_moeda, temp_cotacao
         except Exception as e:
             print(f"Error browsing and extracting data for {moeda}: {str(e)}")
@@ -53,7 +57,7 @@ class CotacaoBot:
         Para o navegador web.
         """
         try:
-            self.browser.quit()
+            self.bot.stop_browser()
         except Exception as e:
             print(f"Error stopping the browser: {str(e)}")
 
