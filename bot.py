@@ -1,69 +1,142 @@
 import csv
 from datetime import datetime
 import logging
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
 from botcity.web import WebBot, Browser
-from botcity.maestro import *
+from botcity.maestro import BotMaestroSDK, AutomationTaskFinishStatus
 
+# Configuração para evitar exceções ao interagir com o BotMaestroSDK
 BotMaestroSDK.RAISE_NOT_CONNECTED = False
 
-def main():
-    maestro = BotMaestroSDK.from_sys_args()
-    execution = maestro.get_execution()
+class CotacaoBot:
+    """
+    Classe para interagir com o bot de navegação web.
+    """
+    def __init__(self, headless:bool):
+        """
+        Inicializa o bot de navegação web.
+        """
+        self.bot = WebBot()
+        self.bot.headless = headless
+        self.bot.browser = Browser.FIREFOX
 
-    print(f"Task ID is: {execution.task_id}")
-    print(f"Task Parameters are: {execution.parameters}")
+    def browse_and_get_cotacao(self, moeda):
+        """
+        Navega até a página do Google e extrai a moeda e a cotação.
 
-    bot = WebBot()
-    bot.headless = False
-    bot.browser = Browser.FIREFOX
+        Args:
+            moeda (str): Nome da moeda.
 
-    pesquisa_cotacao(bot, 'dolar', 'euro', 'libra', 'iene')
-    bot.stop_browser()
-
-    maestro.finish_task(
-        task_id=execution.task_id,
-        status=AutomationTaskFinishStatus.SUCCESS,
-        message="Task Finished OK."
-    )
-
-def not_found(label):
-    print(f"Element not found: {label}")
-
-def data_e_hora_atual() -> str:
-        data_e_hora = datetime.now()
-        return data_e_hora.strftime('%d/%m/%Y %H:%M')
-
-def pesquisa_cotacao(bot, *args):
-    logging.basicConfig(filename='cotacoes.log', level=logging.INFO)
-
-    with open('cotacoes.csv', 'a', newline='') as file:
-        writer = csv.writer(file, delimiter=';')
-
-        if file.tell() == 0:
-            writer.writerow(["Data", "Moeda", "Cotacao"])
-
-        for moeda in args:
-            temp_data = data_e_hora_atual()
-            temp_moeda = moeda
-
-            bot.browse(f"https://www.google.com/search?q=cotação+{moeda}")
-
+        Returns:
+            Tuple[str, str]: Retorna a moeda e a cotação.
+        """
+        try:
+            self.bot.browse(f"https://www.google.com/search?q=cotação+{moeda}")
             script_moeda = 'return document.querySelector("span.vLqKYe").textContent;'
             script_cotacao = 'return document.querySelector(".SwHCTb").textContent;'
+            temp_moeda = self.bot.execute_javascript(script_moeda)
+            temp_cotacao = self.bot.execute_javascript(script_cotacao)
+            return temp_moeda, temp_cotacao
+        except Exception as e:
+            print(f"Error browsing and extracting data for {moeda}: {str(e)}")
+            return None, None
 
-            temp_moeda = bot.execute_javascript(script_moeda)
-            temp_cotacao = bot.execute_javascript(script_cotacao)
+    def stop_browser(self):
+        """
+        Para o navegador web.
+        """
+        try:
+            self.bot.stop_browser()
+        except Exception as e:
+            print(f"Error stopping the browser: {str(e)}")
 
-            if temp_moeda and temp_cotacao:
-                writer.writerow([temp_data, temp_moeda, temp_cotacao])
+class LogFile:
+    """
+    Classe para gerenciar o arquivo de log.
+    """
+    def __init__(self, filename='cotacoes.log'):
+        """
+        Inicializa o arquivo de log.
 
-                resultado_log = f'[{temp_data}] MOEDA: {temp_moeda.upper()}; COTAÇÃO: {temp_cotacao}.'
-                logging.info(resultado_log)
-            else:
-                not_found(f'Moeda: {moeda}')
+        Args:
+            filename (str): Nome do arquivo de log.
+        """
+        logging.basicConfig(filename=filename, level=logging.INFO)
 
-if __name__ == '__main__':
-    main()
+    def write(self, message):
+        """
+        Escreve uma mensagem no arquivo de log.
+
+        Args:
+            message (str): Mensagem a ser escrita.
+        """
+        try:
+            logging.info(message)
+        except Exception as e:
+            print(f"Error writing to log file: {str(e)}")
+
+class CsvFile:
+    """
+    Classe para gerenciar o arquivo CSV.
+    """
+    def __init__(self, filename='cotacoes.csv'):
+        """
+        Inicializa o arquivo CSV.
+
+        Args:
+            filename (str): Nome do arquivo CSV.
+        """
+        self.filename = filename
+
+    def setup_file(self):
+        """
+        Configura o arquivo CSV, adicionando cabeçalho se o arquivo estiver vazio.
+        """
+        try:
+            with open(self.filename, 'a', newline='') as file:
+                writer = csv.writer(file, delimiter=';')
+                if file.tell() == 0:
+                    writer.writerow(["Data", "Moeda", "Cotação"])
+        except Exception as e:
+            print(f"Error setting up CSV file: {str(e)}")
+
+    def write(self, data, moeda, cotacao):
+        """
+        Escreve uma linha no arquivo CSV.
+
+        Args:
+            data (str): Data da cotação.
+            moeda (str): Nome da moeda.
+            cotacao (str): Valor da cotação.
+        """
+        try:
+            with open(self.filename, 'a', newline='') as file:
+                writer = csv.writer(file, delimiter=';')
+                writer.writerow([data, moeda, cotacao])
+        except Exception as e:
+            print(f"Error writing to CSV file: {str(e)}")
+
+def data_e_hora_atual() -> datetime:
+    """
+    Retorna a data e a hora atual no formato '%d/%m/%Y %H:%M'.
+
+    Returns:
+        str: Data e hora formatadas.
+    """
+    try:
+        data_e_hora = datetime.now()
+        return data_e_hora.strftime('%d/%m/%Y %H:%M')
+    except Exception as e:
+        print(f"Error getting current date and time: {str(e)}")
+        return None
+
+def not_found(label):
+    """
+    Imprime uma mensagem indicando que um elemento não foi encontrado.
+
+    Args:
+        label (str): Rótulo do elemento.
+    """
+    try:
+        print(f"Element not found: {label}")
+    except Exception as e:
+        print(f"Error printing 'not found' message: {str(e)}")
