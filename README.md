@@ -7,7 +7,7 @@ Cotação de moedas em tempo real, inspirado no [ConversorSelenium](https://gith
 
 A classe `CotacaoBot` é responsável por interagir com o bot de navegação web. Ela possui os seguintes métodos:
 
-- `__init__(self, headless:bool)`: Inicializa o bot de navegação web com a opção de modo headless.
+- `__init__(self, headless:bool)`: Inicializa o bot de navegação web com a opção de modo headless (False para exibir a interface gráfica, e True para não usar a mesma).
 - `browse_and_get_cotacao(self, moeda) -> Tuple[str, str]`: Navega até a página do Google e extrai a moeda e a cotação.
 - `stop_browser(self)`: Para o navegador web.
 
@@ -36,7 +36,7 @@ Imprime uma mensagem indicando que um elemento não foi encontrado.
 
 ## Executando um exemplo
 
-Para executar o CurrencyBot, utilize o script `example.py`. O programa permite selecionar as moedas desejadas para pesquisa, escolher o modo headless e exibe os resultados na interface gráfica.
+Para executar o CurrencyBot, utilize o script `example.py`. O programa exibe uma interface que permite selecionar as moedas desejadas para pesquisa, escolher o modo headless e exibir os resultados nos arquivos csv e de log.
 
 Certifique-se de ter as dependências do projeto instaladas antes de executar. Utilize o seguinte comando para instalar as dependências:
 
