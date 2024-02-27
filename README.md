@@ -1,5 +1,5 @@
 # CurrencyBot
-Cotação de moedas em tempo real, inspirado no [ConversorSelenium](https://github.com/CastroMurilo/ConversorSelenium) de CastroMurilo.
+Cotação de moedas em tempo real, inspirado no [ConversorSelenium](https://github.com/CastroMurilo/ConversorSelenium) de CastroMurilo. O objetivo deste projeto era aprender sobre o uso da Biblioteca Botcity, e também entender como funciona a automação de processos utilizando Python.
 
 ## Funcionalidades
 
